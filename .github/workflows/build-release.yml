@@ -1,0 +1,61 @@
+name: Build & Release Binaries
+
+on:
+  release:
+    types: [published, created]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Standalone EXEs
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build ManagerHub.exe
+        run: |
+          python packaging/build_manager.py
+
+      - name: Build EmployeeAgent.exe
+        run: |
+          python packaging/build_agent.py
+
+      - name: Package Windows Release ZIP
+        run: |
+          mkdir release-windows
+          copy dist\ManagerHub.exe release-windows\
+          copy dist\EmployeeAgent.exe release-windows\
+          copy README.md release-windows\
+          copy start_manager.bat release-windows\
+          copy start_agent.bat release-windows\
+          Compress-Archive -Path release-windows\* -DestinationPath dist\office-audio-hub-windows-x64.zip
+
+      - name: Upload Windows Binaries to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        with:
+          files: |
+            dist/ManagerHub.exe
+            dist/EmployeeAgent.exe
+            dist/office-audio-hub-windows-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
