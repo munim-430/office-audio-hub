@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+dist/
+build/
+*.spec
+*.db
+*.db-wal
+*.db-shm
+agent_cache.db*
+agent_config.json
+storage/
+.pytest_cache/
